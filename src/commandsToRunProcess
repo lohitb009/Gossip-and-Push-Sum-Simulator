@@ -1,0 +1,29 @@
+PS D:\UF STuff\Fall 2022\distributedOperatingSystem\assignments\Gossip-Push-Sum-Simulator\src> erl
+Eshell V13.0.4  (abort with ^G)
+1> c(gossip).
+{ok,gossip}
+2> c(supervisorMod).
+{ok,supervisorMod}
+3> supervisorMod:startSupervisor(100000,"Line","Gossip").
+{line,100000,65330,
+      [<0.1786.3>,<0.1785.3>,<0.1784.3>,<0.1783.3>,<0.1782.3>,
+       <0.1781.3>,<0.1780.3>,<0.1779.3>,<0.1778.3>,<0.1777.3>,
+       <0.1776.3>,<0.1775.3>,<0.1774.3>,<0.1773.3>,<0.1772.3>,
+       <0.1771.3>,<0.1770.3>,<0.1769.3>,<0.1768.3>,<0.1767.3>,
+       <0.1766.3>,<0.1765.3>,<0.1764.3>,<0.1763.3>,<0.1762.3>|...]}
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Converged By Itself
+4> Can't route anywhere, all the neighbors are dead :'(
+4>
