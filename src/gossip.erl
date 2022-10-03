@@ -6,7 +6,7 @@
 %%%% ==== Expose the API to client
 startLink() ->
   ActorPid = spawn_link(?MODULE,main_loop,[0]),
-  io:format("ActorPID Started At : ~p~n",[ActorPid]),
+  %%% io:format("ActorPID Started At : ~p~n",[ActorPid]),
   {ok,ActorPid}.
 
 %%% ==== Internal APIs not to be exposed
@@ -35,8 +35,6 @@ main_loop(RumorCount) ->
           case length(Neighbors) of
              0 ->
                %%% My both neighbors are dead, I am kind of dead as well
-               %%% Iteratively select the ActorPid from the line list
-               %%% Select active neighbor
                io:format("Converged By Neighbors Death ~n");
 
             _ ->
@@ -87,10 +85,35 @@ main_loop(RumorCount) ->
               io:format("Current PID : ~p New RumorCount : ~p ~n",[self(), RumorCount+1]),
               main_loop(RumorCount+1)
           end
+      end;
+
+    {fullNetwork,TotalNodes,FullList} ->
+      case RumorCount of
+        10  ->
+          io:format("Converged By Itself ~n"),
+          %%% Randomly select any neighbor and continue
+          {Idx,ActorPid} = getNeighbors_fullNetwork(0,TotalNodes,FullList),
+          case Idx of
+            -1  ->
+              io:format("More than 98% nodes call have converged, THE END..~n");
+            _   ->
+              ActorPid ! {fullNetwork,TotalNodes,FullList}
+          end;
+
+        _ ->
+          %%% Randomly select any neighbor and continue
+          {Idx,ActorPid} = getNeighbors_fullNetwork(0,TotalNodes,FullList),
+          case Idx of
+            -1  ->
+              io:format("More than 98% nodes call have converged, THE END..~n");
+            _   ->
+              ActorPid ! {fullNetwork, TotalNodes, FullList},
+              main_loop(RumorCount+1)
+          end
       end
   end.
 
-%%% get the Neighbors
+%%% get the Neighbors for Line Topology
 getNeighbors(Index,TotalNodes,LineList) ->
   NeighborsList = forLoop(Index,1,[-1,1],[],LineList,TotalNodes),
   NeighborsList.
@@ -119,7 +142,7 @@ forLoop(CurrIndex,Itr,DirMatrix,NeighborsList,LineList,TotalNodes) ->
       end
   end.
 
-
+%%% get the Neighbors for 2D Topology
 getNeighbors_2d(Index1, Index2, SquareDim,List_2D) ->
   NeighborsList = forLoop_2d(Index1, Index2,1,[[-1,0],[1,0],[0,1],[0,-1]],[],List_2D,SquareDim),
   NeighborsList.
@@ -146,5 +169,26 @@ forLoop_2d(Index1, Index2, Itr,DirMatrix,NeighborsList,List_2D,SquareDim) ->
       %%% else case for the condition
         true ->
           forLoop_2d(Index1, Index2, Itr+1,DirMatrix,NeighborsList,List_2D,SquareDim)
+      end
+  end.
+
+%%% Randomly select the neighbor for Full Network
+getNeighbors_fullNetwork(Count,TotalNodes,FullList) ->
+
+  %%% Get a random ActorPid
+  Index = rand:uniform(TotalNodes),
+  ActorPid = lists:nth(Index,FullList),
+
+  case is_process_alive(ActorPid) of
+    true  ->
+      %%% io:format("Returning Tuple Pair ~p ~n",[{Index,ActorPid}]),
+      {Index,ActorPid};
+
+    _ ->
+      if
+        ((Count/TotalNodes)*100) < 98 ->
+          getNeighbors_fullNetwork(Count+1,TotalNodes,FullList);
+        true ->
+          {-1, "None"}
       end
   end.

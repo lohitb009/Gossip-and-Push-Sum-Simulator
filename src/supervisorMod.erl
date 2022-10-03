@@ -1,4 +1,4 @@
--module(supv).
+-module(supervisorMod).
 -author("lohit").
 -export([startSupervisor/3]).
 
@@ -51,7 +51,23 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       end;
 
     "FullNetwork" ->
-        pass;
+      FullList = fillUpFullNetwork(Algorithm,TotalNodes,[]),
+      %%% io:format("Full List is ~p ~n ",[FullList]),
+
+      %%% Get a random ActorPid
+      Index = rand:uniform(TotalNodes),
+      ActorPid = lists:nth(Index,FullList),
+
+      %%% Decide for Algorithm
+      case Algorithm of
+
+        "Gossip"  ->
+          ActorPid ! {fullNetwork,TotalNodes,FullList};
+
+        "PushSum" ->
+          pass
+
+      end;
 
     "Imperfect2D" ->
         pass
@@ -69,6 +85,7 @@ fillUp1DList(Algorithm,TotalNodes,List) ->
         pass
   end.
 
+%%% --- 2D Topology, fill up 2D Matrix
 fillUp2DList(_,_,0.0,List) ->
   List;
 fillUp2DList(Algorithm,SqareDim,Curr,List) ->
@@ -82,6 +99,18 @@ fillUpEach2DList(Algorithm,SqareDim,List) ->
     "Gossip"->
       {ok,ActorPid} = gossip:startLink(),
       fillUpEach2DList(Algorithm,SqareDim-1,[ActorPid|List]);
+    "PushSum" ->
+      pass
+  end.
+
+%%% --- Full Network Topology, fill up Star Network
+fillUpFullNetwork(_,0,List) ->
+  List;
+fillUpFullNetwork(Algorithm,TotalNodes,List) ->
+  case Algorithm of
+    "Gossip"->
+      {ok,ActorPid} = gossip:startLink(),
+      fillUpFullNetwork(Algorithm,TotalNodes-1,[ActorPid|List]);
     "PushSum" ->
       pass
   end.
