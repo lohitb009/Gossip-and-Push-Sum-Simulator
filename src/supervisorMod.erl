@@ -65,8 +65,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {fullNetwork,TotalNodes,FullList};
 
         "PushSum" ->
-          pass
-
+          ActorPid ! {fullNetwork,TotalNodes,FullList,2,1}
       end;
 
     "Imperfect2D" ->
@@ -112,5 +111,7 @@ fillUpFullNetwork(Algorithm,TotalNodes,List) ->
       {ok,ActorPid} = gossip:startLink(),
       fillUpFullNetwork(Algorithm,TotalNodes-1,[ActorPid|List]);
     "PushSum" ->
-      pass
+      Current = TotalNodes,
+      {ok,ActorPid} = pushSum:startLink(Current),
+      fillUpFullNetwork(Algorithm,TotalNodes-1,[ActorPid|List])
   end.
