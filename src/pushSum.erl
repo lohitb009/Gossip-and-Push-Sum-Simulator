@@ -14,7 +14,6 @@ main_loop(Sum,Weight,Round) ->
   receive
 
     {fullNetwork,TotalNodes,FullList,S,W} ->
-      io:format("~n"),
 
       OldEstimate = Sum/Weight,
       NewEstimate = (Sum+S)/(Weight+W),
@@ -36,7 +35,7 @@ main_loop(Sum,Weight,Round) ->
                 Round =:= 3 ->
                   %%% This ActorPid will converge
                   %%% Send the message to the random index
-                  io:format("Current process-id ~p is dead :( ~n",[self()]),
+                  %%% io:format("Current process-id ~p is dead :( ~n",[self()]),
 
                   if
                     ActorPid =:= self() ->
