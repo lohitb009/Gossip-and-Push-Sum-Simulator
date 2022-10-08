@@ -62,7 +62,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {fullNetwork,TotalNodes,FullList};
+          ActorPid ! {fullNetwork,FullList};
 
         "PushSum" ->
           ActorPid ! {fullNetwork,FullList,0,0}
