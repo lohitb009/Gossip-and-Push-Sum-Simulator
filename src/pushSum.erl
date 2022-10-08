@@ -12,102 +12,38 @@ startLink(Sum) ->
 
 main_loop(Sum,Weight,Round) ->
   receive
+    {fullNetwork,FullList,S,W} ->
+      case length(FullList) of
+        1 ->
+           io:format("My Full Network Topology has converged .. :'( ~n");
 
-    {fullNetwork,TotalNodes,FullList,S,W} ->
+        _ ->
+           OldEstimate = Sum/Weight,
+           NewEstimate = (Sum+S)/(Weight+W),
 
-      OldEstimate = Sum/Weight,
-      NewEstimate = (Sum+S)/(Weight+W),
+           if
+             (OldEstimate-NewEstimate) < 0.0000000001 ->
+               %%% Chk for rounds
 
-      %% io:format("ActorPid is ~p ~n",[self()]),
-      %% io:format("Delta is ~p ~n",[OldEstimate-NewEstimate]),
+               if
+                 Round =:= 2->
+                   Idx = rand:uniform(length(FullList--[self()])),
+                   ActorPid = lists:nth(Idx,FullList--[self()]),
+                   ActorPid ! {fullNetwork,FullList--[self()],(Sum+S)/2,(Weight+W)/2},
+                   io:format("ActorPid is done ~p ~n ",[self()]);
 
-      if
-        (OldEstimate-NewEstimate) < 0.01 ->
-          %%% Randomly select an index
-          {Idx,ActorPid} = getNeighbors_fullNetwork(0,TotalNodes,FullList),
+                 true ->
+                   Idx = rand:uniform(length(FullList--[self()])),
+                   ActorPid = lists:nth(Idx,FullList--[self()]),
+                   ActorPid ! {fullNetwork,FullList,(Sum+S)/2,(Weight+W)/2},
+                   main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+               end;
 
-          case Idx of
-            -1  ->
-              io:format("More than 98% nodes call have converged, THE END..~n");
-
-            _   ->
-              if
-                Round =:= 3 ->
-                  %%% This ActorPid will converge
-                  %%% Send the message to the random index
-                  %%% io:format("Current process-id ~p is dead :( ~n",[self()]),
-
-                  if
-                    ActorPid =:= self() ->
-                      %%% Randomly select an index
-                      {NewIdx,NewActorPid} = getNeighbors_fullNetwork(0,TotalNodes,FullList),
-                      case NewIdx of
-                        -1  ->
-                          io:format("More than 98% nodes call have converged, THE END..~n");
-                        _ ->
-                          NewActorPid ! {fullNetwork,TotalNodes,FullList,(Sum+S)/2,(Weight+W)/2}
-                      end;
-
-                    true ->
-                        ActorPid ! {fullNetwork,TotalNodes,FullList,(Sum+S)/2,(Weight+W)/2}
-
-                  end;
-
-                true ->
-                  %%% Send the message to the random index
-                  ActorPid ! {fullNetwork,TotalNodes,FullList,(Sum+S)/2,(Weight+W)/2},
-                  %%% Recursively call itself
-                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
-              end
-          end;
-
-        true ->
-          %%% Randomly select an index
-          {Idx,ActorPid} = getNeighbors_fullNetwork(0,TotalNodes,FullList),
-          case Idx of
-            -1  ->
-              io:format("More than 98% nodes call have converged, THE END..~n");
-
-            _   ->
-              if
-                ActorPid =:= self() ->
-                  %%% Randomly select an index
-                  {NewIdx,NewActorPid} = getNeighbors_fullNetwork(0,TotalNodes,FullList),
-                  case NewIdx of
-                    -1  ->
-                      io:format("More than 98% nodes call have converged, THE END..~n");
-                    _ ->
-                      NewActorPid ! {fullNetwork,TotalNodes,FullList,(Sum+S)/2,(Weight+W)/2},
-                      %%% Recursively call itself
-                      main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
-                  end;
-                true ->
-                  %%% Send the message to the random index
-                  ActorPid ! {fullNetwork,TotalNodes,FullList,(Sum+S)/2,(Weight+W)/2},
-                  %%% Recursively call itself
-                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
-              end
-          end
-      end
-  end.
-
-%%% Randomly select the neighbor for Full Network
-getNeighbors_fullNetwork(Count,TotalNodes,FullList) ->
-
-  %%% Get a random ActorPid
-  Index = rand:uniform(TotalNodes),
-  ActorPid = lists:nth(Index,FullList),
-
-  case is_process_alive(ActorPid) of
-    true  ->
-      %% io:format("Returning Tuple Pair ~p ~n",[{Index,ActorPid}]),
-      {Index,ActorPid};
-
-    _ ->
-      if
-        ((Count/TotalNodes)*100) < 98 ->
-          getNeighbors_fullNetwork(Count+1,TotalNodes,FullList);
-        true ->
-          {-1, "None"}
+             true ->
+               Idx = rand:uniform(length(FullList--[self()])),
+               ActorPid = lists:nth(Idx,FullList--[self()]),
+               ActorPid ! {fullNetwork,FullList,(Sum+S)/2,(Weight+W)/2},
+               main_loop((Sum+S)/2, (Weight+W)/2, Round)
+           end
       end
   end.

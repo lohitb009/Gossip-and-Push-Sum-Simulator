@@ -3,7 +3,7 @@
 -export([startSupervisor/3]).
 
 startSupervisor(TotalNodes,Topology,Algorithm) ->
-    supervisorMod(TotalNodes,Topology,Algorithm).
+  supervisorMod(TotalNodes,Topology,Algorithm).
 
 %%%% --- Internal Function ---
 supervisorMod(TotalNodes,Topology,Algorithm) ->
@@ -65,11 +65,11 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {fullNetwork,TotalNodes,FullList};
 
         "PushSum" ->
-          ActorPid ! {fullNetwork,TotalNodes,FullList,2,1}
+          ActorPid ! {fullNetwork,FullList,0,0}
       end;
 
     "Imperfect2D" ->
-        pass
+      pass
   end.
 
 %%% --- Line Topology, fill up 1D List
@@ -78,10 +78,10 @@ fillUp1DList(_,0,List) ->
 fillUp1DList(Algorithm,TotalNodes,List) ->
   case Algorithm of
     "Gossip"->
-        {ok,ActorPid} = gossip:startLink(),
-        fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List]);
+      {ok,ActorPid} = gossip:startLink(),
+      fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List]);
     "PushSum" ->
-        pass
+      pass
   end.
 
 %%% --- 2D Topology, fill up 2D Matrix
