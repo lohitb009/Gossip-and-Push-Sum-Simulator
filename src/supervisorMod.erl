@@ -52,7 +52,6 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
 
     "FullNetwork" ->
       FullList = fillUpFullNetwork(Algorithm,TotalNodes,[]),
-      %%% io:format("Full List is ~p ~n ",[FullList]),
 
       %%% Get a random ActorPid
       Index = rand:uniform(TotalNodes),

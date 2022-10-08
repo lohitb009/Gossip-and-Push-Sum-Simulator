@@ -95,7 +95,7 @@ main_loop(RumorCount) ->
         _ ->
           case RumorCount of
             9  ->
-%%          io:format("Received 10 msgs at ~p ~n",[self()]),
+
               Idx = rand:uniform(length(FullList--[self()])),
               ActorPid = lists:nth(Idx,FullList--[self()]),
               ActorPid ! {fullNetwork,FullList--[self()]},
@@ -110,20 +110,7 @@ main_loop(RumorCount) ->
           end
       end;
 
-%%          io:format("Received a msg at ~p ~n",[self()]),
-%%          %%% Randomly select any neighbor and continue
-%%          ActorPid = getNeighbors_fullNetwork(0, length(FullList--[self()]), FullList--[self()]),
-%%          ActorPid ! {fullNetwork, length(FullList), FullList},
-%%          io:format("Actor pidd selected : ~p ~n",[ActorPid]),
-%%          main_loop(RumorCount+1)
-%%          case Idx of
-%%            -1  ->
-%%              io:format("More than 98% nodes call have converged, THE END..~n");
-%%            _   ->
-%%              ActorPid ! {fullNetwork, TotalNodes, FullList},
-%%              main_loop(RumorCount+1)
-%%          end
-%%      end;
+
     {imp_3d, SquareDim,Index1, Index2 ,List_2D} ->
       case RumorCount of
         10  ->
@@ -229,15 +216,7 @@ getNeighbors_i3d(Index1, Index2, SquareDim,List_2D) ->
   NeighborsList = forLoop_i3d(Index1, Index2,1,[[-1,0],[1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]],[],List_2D,SquareDim),
   RandomPID = addRandomNeighbour(Index1, Index2, SquareDim, List_2D),
   [RandomPID | NeighborsList].
-%%  NeighborsList.
 
-%%% get the Neighbors for imperfect 3d Topology
-%%forLoop_i3d(Index1, Index2, SquareDim,List_2D) ->
-%%  NeighborsList = forLoop_i3d(Index1, Index2,1,[[-1,0],[1,0],[0,1],[0,-1]],[],List_2D,SquareDim),
-
-%%  while()
-%%  RanIdx1 = rand:uniform(length(List_2D)),
-%%  RanIdx2 = rand:uniform(length(List_2D)),
 
 
 addRandomNeighbour(Index1, Index2, SquareDim, List_2D) ->
@@ -275,24 +254,3 @@ forLoop_i3d(Index1, Index2, Itr,DirMatrix,NeighborsList,List_2D,SquareDim) ->
           forLoop_i3d(Index1, Index2, Itr+1,DirMatrix,NeighborsList,List_2D,SquareDim)
       end
   end.
-
-%%% Randomly select the neighbor for Full Network
-getNeighbors_fullNetwork(Count,TotalNodes,FullList) ->
-
-  %%% Get a random ActorPid
-  Index = rand:uniform(TotalNodes),
-  ActorPid = lists:nth(Index,FullList),
-  ActorPid.
-%%  case is_process_alive(ActorPid) of
-%%    true  ->
-%%      %%% io:format("Returning Tuple Pair ~p ~n",[{Index,ActorPid}]),
-%%      {Index,ActorPid};
-%%
-%%    _ ->
-%%      if
-%%        ((Count/TotalNodes)*100) < 98 ->
-%%          getNeighbors_fullNetwork(Count+1,TotalNodes,FullList);
-%%        true ->
-%%          {-1, "None"}
-%%      end
-%%  end.
