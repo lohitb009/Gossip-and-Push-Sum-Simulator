@@ -12,21 +12,23 @@ startLink() ->
 %%% ==== Internal APIs not to be exposed
 main_loop(RumorCount) ->
   receive
-    {line,TotalNodes,Index,LineList} ->
+    {line,TotalNodes,Index,LineList,SupervisorPid} ->
       case RumorCount of
         10  ->
           io:format("Converged By Itself ~n"),
           Neighbors = getNeighbors(Index,TotalNodes,LineList),
           case length(Neighbors) of
             0 ->
-              io:format("Can't route anywhere, all the neighbors are dead :'( ~n");
+              io:format("Can't route anywhere, all the neighbors are dead :'( ~n"),
+              %%% Give the control back to the parent
+              SupervisorPid ! {line,LineList};
             1 ->
               {Idx,ActorPid} = lists:nth(1,Neighbors),
-              ActorPid ! {line,TotalNodes,Idx,LineList};
+              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid};
             2 ->
               NeighborIndex = rand:uniform(length(Neighbors)),
               {Idx,ActorPid} = lists:nth(NeighborIndex,Neighbors),
-              ActorPid ! {line,TotalNodes,Idx,LineList}
+              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid}
           end;
 
         _ ->
@@ -35,17 +37,20 @@ main_loop(RumorCount) ->
           case length(Neighbors) of
             0 ->
               %%% My both neighbors are dead, I am kind of dead as well
-              io:format("Converged By Neighbors Death ~n");
+              io:format("Converged By Neighbors Death ~n"),
+              %%% Give the control back to the parent
+              SupervisorPid ! {line,LineList};
 
             _ ->
               %%% Randomly select any neighbor from the list
               %%% Get a random ActorPid
               NeighborIndex = rand:uniform(length(Neighbors)),
               {Idx,ActorPid} = lists:nth(NeighborIndex,Neighbors),
-              ActorPid ! {line,TotalNodes,Idx,LineList},
+              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid},
               main_loop(RumorCount+1)
           end
       end;
+
     {"2D",SquareDim,Index1, Index2 ,List_2D} ->
       case RumorCount of
         10  ->
@@ -87,7 +92,16 @@ main_loop(RumorCount) ->
           end
       end;
 
-    {fullNetwork,FullList} ->
+    {fullNetwork,FullList,PrevActorPid} ->
+
+      case PrevActorPid of
+         false ->
+           ok;
+
+         _ ->
+           PrevActorPid ! {fullNetwork,FullList,false}
+      end,
+
       case length(FullList) of
         1 ->
           io:format("My Full Network Topology has converged .. :'( ~n");
@@ -105,11 +119,10 @@ main_loop(RumorCount) ->
               io:format("At ~p ~n ",[self()]),
               Idx = rand:uniform(length(FullList--[self()])),
               ActorPid = lists:nth(Idx,FullList--[self()]),
-              ActorPid ! {fullNetwork,FullList},
+              ActorPid ! {fullNetwork,FullList,self()},
               main_loop(RumorCount+1)
           end
       end;
-
 
     {imp_3d, SquareDim,Index1, Index2 ,List_2D} ->
       case RumorCount of

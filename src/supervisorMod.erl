@@ -20,10 +20,12 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {line,TotalNodes,Index,LineList};
+          ActorPid ! {line,TotalNodes,Index,LineList,self()},
+          lineConvergenceOfNodes();
 
         "PushSum" ->
           ActorPid ! {line,LineList,0,0}
+          %%% lineConvergenceOfNodes()
 
       end;
 
@@ -63,7 +65,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {fullNetwork,FullList};
+          ActorPid ! {fullNetwork,FullList,false};
 
         "PushSum" ->
           ActorPid ! {fullNetwork,FullList,0,0}
@@ -140,3 +142,31 @@ fillUpFullNetwork(Algorithm,TotalNodes,List) ->
       {ok,ActorPid} = pushSum:startLink(Current),
       fillUpFullNetwork(Algorithm,TotalNodes-1,[ActorPid|List])
   end.
+
+
+%%%% Supervisor receives line communication
+lineConvergenceOfNodes() ->
+  receive
+    {line,UpdatedList} ->
+      %%% chk the list and find the Alive Actors --- count to start from 1
+      {Status,ActorPid,Index} = chkForAliveActors(length(UpdatedList),UpdatedList),
+      case Status of
+          fail ->
+            io:format("Entire nodes in topology have converged ~n");
+          ok ->
+            %%% send the communication
+            ActorPid ! {line,length(UpdatedList),Index,UpdatedList,self()},
+            lineConvergenceOfNodes()
+      end
+  end.
+
+chkForAliveActors(0,_) ->
+  {fail,"None","None"};
+chkForAliveActors(Count,UpdatedList) ->
+  ActorPid = lists:nth(Count, UpdatedList),
+  case is_process_alive(ActorPid) of
+    true  ->
+      {ok,ActorPid,Count};
+    false ->
+      chkForAliveActors(Count-1,UpdatedList)
+end.
