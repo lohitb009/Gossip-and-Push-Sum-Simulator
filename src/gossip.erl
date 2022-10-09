@@ -33,9 +33,9 @@ main_loop(RumorCount) ->
           %% These are all alive neighbors
           Neighbors = getNeighbors(Index,TotalNodes,LineList),
           case length(Neighbors) of
-             0 ->
-               %%% My both neighbors are dead, I am kind of dead as well
-               io:format("Converged By Neighbors Death ~n");
+            0 ->
+              %%% My both neighbors are dead, I am kind of dead as well
+              io:format("Converged By Neighbors Death ~n");
 
             _ ->
               %%% Randomly select any neighbor from the list
@@ -160,14 +160,14 @@ getNeighbors(Index,TotalNodes,LineList) ->
 
 forLoop(CurrIndex,Itr,DirMatrix,NeighborsList,LineList,TotalNodes) ->
   if
-    %%% Itr is out of bounds
+  %%% Itr is out of bounds
     Itr > length(DirMatrix)->
       NeighborsList;
 
     true ->
       TempIndex = CurrIndex + lists:nth(Itr,DirMatrix),
       if
-        %%% If condition is true
+      %%% If condition is true
         TempIndex > 0 andalso TempIndex < (TotalNodes+1) ->
           ActorPid = lists:nth(TempIndex,LineList),
           case is_process_alive(ActorPid) of
@@ -176,7 +176,7 @@ forLoop(CurrIndex,Itr,DirMatrix,NeighborsList,LineList,TotalNodes) ->
             false ->
               forLoop(CurrIndex,Itr+1,DirMatrix,NeighborsList,LineList,TotalNodes)
           end;
-        %%% else case for the condition
+      %%% else case for the condition
         true ->
           forLoop(CurrIndex,Itr+1,DirMatrix,NeighborsList,LineList,TotalNodes)
       end

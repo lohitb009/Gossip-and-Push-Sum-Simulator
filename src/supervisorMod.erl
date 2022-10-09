@@ -3,7 +3,7 @@
 -export([startSupervisor/3]).
 
 startSupervisor(TotalNodes,Topology,Algorithm) ->
-    supervisorMod(TotalNodes,Topology,Algorithm).
+  supervisorMod(TotalNodes,Topology,Algorithm).
 
 %%%% --- Internal Function ---
 supervisorMod(TotalNodes,Topology,Algorithm) ->
@@ -52,6 +52,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
 
     "FullNetwork" ->
       FullList = fillUpFullNetwork(Algorithm,TotalNodes,[]),
+      %%% io:format("Full List is ~p ~n ",[FullList]),
 
       %%% Get a random ActorPid
       Index = rand:uniform(TotalNodes),
@@ -64,31 +65,11 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {fullNetwork,FullList};
 
         "PushSum" ->
-          ActorPid ! {fullNetwork,TotalNodes,FullList,2,1}
+          ActorPid ! {fullNetwork,FullList,0,0}
       end;
 
-    "Imperfect3D" ->
-      SqareDim = math:ceil(math:sqrt(TotalNodes)),
-      List_2D = fillUp2DList(Algorithm,SqareDim,SqareDim,[]),
-
-      % Get a random ActorPid
-      Index1 = rand:uniform(trunc(SqareDim)),
-      Index2 = rand:uniform(trunc(SqareDim)),
-      ActorPid = lists:nth(Index2,lists:nth(Index1,List_2D)),
-
-      io:format("Dimensions of grid : ~p~n List_2d : ~p~n Random ActorPID Selected for start : ~p~n",[SqareDim, List_2D, ActorPid]),
-
-      %%% Decide for Algorithm
-      case Algorithm of
-
-        "Gossip"  ->
-          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D},
-          gossip_started;
-
-        "PushSum" ->
-          pass
-
-      end
+    "Imperfect2D" ->
+      pass
   end.
 
 %%% --- Line Topology, fill up 1D List
@@ -97,10 +78,10 @@ fillUp1DList(_,0,List) ->
 fillUp1DList(Algorithm,TotalNodes,List) ->
   case Algorithm of
     "Gossip"->
-        {ok,ActorPid} = gossip:startLink(),
-        fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List]);
+      {ok,ActorPid} = gossip:startLink(),
+      fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List]);
     "PushSum" ->
-        pass
+      pass
   end.
 
 %%% --- 2D Topology, fill up 2D Matrix
