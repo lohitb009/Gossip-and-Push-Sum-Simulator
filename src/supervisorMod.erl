@@ -23,7 +23,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {line,TotalNodes,Index,LineList};
 
         "PushSum" ->
-          pass
+          ActorPid ! {line,LineList,0,0}
 
       end;
 
@@ -46,8 +46,9 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           gossip_started;
 
         "PushSum" ->
-          pass
-
+%%          pass
+          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D, 0, 0},
+          pushsum_started
       end;
 
     "FullNetwork" ->
@@ -68,8 +69,28 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {fullNetwork,FullList,0,0}
       end;
 
-    "Imperfect2D" ->
-      pass
+    "Imperfect3D" ->
+      SqareDim = math:ceil(math:sqrt(TotalNodes)),
+      List_2D = fillUp2DList(Algorithm,SqareDim,SqareDim,[]),
+
+      % Get a random ActorPid
+      Index1 = rand:uniform(trunc(SqareDim)),
+      Index2 = rand:uniform(trunc(SqareDim)),
+      ActorPid = lists:nth(Index2,lists:nth(Index1,List_2D)),
+
+      io:format("Dimensions of grid : ~p~n List_2d : ~p~n Random ActorPID Selected for start : ~p~n",[SqareDim, List_2D, ActorPid]),
+
+      %%% Decide for Algorithm
+      case Algorithm of
+
+        "Gossip"  ->
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D},
+          gossip_started;
+
+        "PushSum" ->
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D, 0, 0},
+          pushsum_started
+      end
   end.
 
 %%% --- Line Topology, fill up 1D List
@@ -81,7 +102,9 @@ fillUp1DList(Algorithm,TotalNodes,List) ->
       {ok,ActorPid} = gossip:startLink(),
       fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List]);
     "PushSum" ->
-      pass
+      Current = TotalNodes,
+      {ok,ActorPid} = pushSum:startLink(Current),
+      fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List])
   end.
 
 %%% --- 2D Topology, fill up 2D Matrix
@@ -99,7 +122,9 @@ fillUpEach2DList(Algorithm,SqareDim,List) ->
       {ok,ActorPid} = gossip:startLink(),
       fillUpEach2DList(Algorithm,SqareDim-1,[ActorPid|List]);
     "PushSum" ->
-      pass
+      Current = SqareDim,
+      {ok,ActorPid} = pushSum:startLink(Current),
+      fillUpEach2DList(Algorithm,SqareDim-1,[ActorPid|List])
   end.
 
 %%% --- Full Network Topology, fill up Star Network
