@@ -20,7 +20,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {line,TotalNodes,Index,LineList,self()},
+          ActorPid ! {line,TotalNodes,Index,LineList,self(),false},
           lineConvergenceOfNodes();
 
         "PushSum" ->
@@ -44,7 +44,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D},
+          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D, false, false},
           gossip_started;
 
         "PushSum" ->
@@ -86,7 +86,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D},
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D, false, false},
           gossip_started;
 
         "PushSum" ->
@@ -155,7 +155,7 @@ lineConvergenceOfNodes() ->
             io:format("Entire nodes in topology have converged ~n");
           ok ->
             %%% send the communication
-            ActorPid ! {line,length(UpdatedList),Index,UpdatedList,self()},
+            ActorPid ! {line,length(UpdatedList),Index,UpdatedList,self(),false},
             lineConvergenceOfNodes()
       end
   end.
