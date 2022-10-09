@@ -23,7 +23,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {line,TotalNodes,Index,LineList};
 
         "PushSum" ->
-          pass
+          ActorPid ! {line,LineList,0,0}
 
       end;
 
@@ -46,8 +46,9 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           gossip_started;
 
         "PushSum" ->
-          pass
-
+%%          pass
+          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D, 0, 0},
+          pushsum_started
       end;
 
     "FullNetwork" ->
@@ -81,7 +82,9 @@ fillUp1DList(Algorithm,TotalNodes,List) ->
       {ok,ActorPid} = gossip:startLink(),
       fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List]);
     "PushSum" ->
-      pass
+      Current = TotalNodes,
+      {ok,ActorPid} = pushSum:startLink(Current),
+      fillUp1DList(Algorithm,TotalNodes-1,[ActorPid|List])
   end.
 
 %%% --- 2D Topology, fill up 2D Matrix
@@ -99,7 +102,9 @@ fillUpEach2DList(Algorithm,SqareDim,List) ->
       {ok,ActorPid} = gossip:startLink(),
       fillUpEach2DList(Algorithm,SqareDim-1,[ActorPid|List]);
     "PushSum" ->
-      pass
+      Current = SqareDim,
+      {ok,ActorPid} = pushSum:startLink(Current),
+      fillUpEach2DList(Algorithm,SqareDim-1,[ActorPid|List])
   end.
 
 %%% --- Full Network Topology, fill up Star Network
