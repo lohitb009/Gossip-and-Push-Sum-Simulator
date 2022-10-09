@@ -134,6 +134,52 @@ main_loop(Sum,Weight,Round) ->
               io:format("Round is ~p , sent msg to : ~p ~n",[0,ActorPid]),
               main_loop((Sum+S)/2, (Weight+W)/2, 0)
           end
+      end;
+
+    {imp_3d,SquareDim,Index1, Index2 ,List_2D, S,W} ->
+%%      io:format("Reached : ~p ~n",[self()]),
+%%      Index = string:str(FullList, [self()]),
+      Neighbors_init = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+      case length(Neighbors_init) of
+        0 ->
+          io:format("My 2d Topology has converged .. :'( ~n");
+
+        _ ->
+          OldEstimate = Sum/Weight,
+          NewEstimate = (Sum+S)/(Weight+W),
+
+          if
+            (OldEstimate-NewEstimate) < 0.0000000001 ->
+              %%% Chk for rounds
+
+              if
+                Round =:= 2->
+                  Neighbors1 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+                  Idx = rand:uniform(length(Neighbors1)),
+                  {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors1),
+                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
+                  io:format("ActorPid is done ~p ~n ",[self()]),
+                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2};
+%%                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]);
+
+
+                true ->
+                  Neighbors2 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+                  Idx = rand:uniform(length(Neighbors2)),
+                  {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors2),
+                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2},
+                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
+                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+              end;
+
+            true ->
+              Neighbors4 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+              Idx = rand:uniform(length(Neighbors4)),
+              {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors4),
+              ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2},
+              io:format("Round is ~p , sent msg to : ~p ~n",[0,ActorPid]),
+              main_loop((Sum+S)/2, (Weight+W)/2, 0)
+          end
       end
 
 
@@ -200,7 +246,7 @@ forLoop_2d(Index1, Index2, Itr,DirMatrix,NeighborsList,List_2D,SquareDim) ->
 getNeighbors_i3d(Index1, Index2, SquareDim,List_2D) ->
   NeighborsList = forLoop_i3d(Index1, Index2,1,[[-1,0],[1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]],[],List_2D,SquareDim),
   RandomPID = addRandomNeighbour(Index1, Index2, SquareDim, List_2D),
-  [RandomPID | NeighborsList].
+  [{[Index1, Index2], RandomPID} | NeighborsList].
 
 addRandomNeighbour(Index1, Index2, SquareDim, List_2D) ->
   R1 = rand:uniform(length(List_2D)),

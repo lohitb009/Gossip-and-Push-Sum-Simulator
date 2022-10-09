@@ -69,8 +69,28 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {fullNetwork,FullList,0,0}
       end;
 
-    "Imperfect2D" ->
-      pass
+    "Imperfect3D" ->
+      SqareDim = math:ceil(math:sqrt(TotalNodes)),
+      List_2D = fillUp2DList(Algorithm,SqareDim,SqareDim,[]),
+
+      % Get a random ActorPid
+      Index1 = rand:uniform(trunc(SqareDim)),
+      Index2 = rand:uniform(trunc(SqareDim)),
+      ActorPid = lists:nth(Index2,lists:nth(Index1,List_2D)),
+
+      io:format("Dimensions of grid : ~p~n List_2d : ~p~n Random ActorPID Selected for start : ~p~n",[SqareDim, List_2D, ActorPid]),
+
+      %%% Decide for Algorithm
+      case Algorithm of
+
+        "Gossip"  ->
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D},
+          gossip_started;
+
+        "PushSum" ->
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D, 0, 0},
+          pushsum_started
+      end
   end.
 
 %%% --- Line Topology, fill up 1D List

@@ -227,7 +227,7 @@ addRandomNeighbour(Index1, Index2, SquareDim, List_2D) ->
       addRandomNeighbour(Index1, Index2, SquareDim, List_2D);
     true ->
       ActorPid = lists:nth(R2, lists:nth(R1,List_2D)),
-      ActorPid
+      {[R1, R2],ActorPid}
   end.
 
 forLoop_i3d(Index1, Index2, Itr,DirMatrix,NeighborsList,List_2D,SquareDim) ->
