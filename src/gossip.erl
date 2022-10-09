@@ -40,13 +40,17 @@ main_loop(RumorCount) ->
             _ ->
               %%% Randomly select any neighbor from the list
               %%% Get a random ActorPid
-              NeighborIndex = rand:uniform(length(Neighbors)),
-              {Idx,ActorPid} = lists:nth(NeighborIndex,Neighbors),
-              ActorPid ! {line,TotalNodes,Idx,LineList},
-              main_loop(RumorCount+1)
+              activateWorker = fun() ->
+                NeighborIndex = rand:uniform(length(Neighbors)),
+                {Idx,ActorPid} = lists:nth(NeighborIndex,Neighbors),
+                ActorPid ! {line,TotalNodes,Idx,LineList},
+                main_loop(RumorCount+1) end
+
+
           end
       end;
     {"2D",SquareDim,Index1, Index2 ,List_2D} ->
+%%      lists:member(Element, List).
       case RumorCount of
         10  ->
           io:format("Current PID : ~p RumorCount : ~p ~n",[self(), RumorCount]),
