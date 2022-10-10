@@ -15,7 +15,10 @@ main_loop(Sum, Weight, Round) ->
     {fullNetwork, FullList, S, W} ->
       case length(FullList) of
         1 ->
+          {RealTime, _} = statistics(wall_clock),
+          io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
           io:format("My Full Network Topology has converged .. :'( ~n");
+
 
         _ ->
           OldEstimate = Sum / Weight,
@@ -30,19 +33,29 @@ main_loop(Sum, Weight, Round) ->
                   Idx = rand:uniform(length(FullList--[self()])),
                   ActorPid = lists:nth(Idx, FullList--[self()]),
                   ActorPid ! {fullNetwork, FullList--[self()], (Sum + S) / 2, (Weight + W) / 2},
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   io:format("ActorPid is done ~p ~n ", [self()]);
 
                 true ->
+                  %%              get neighbor index
                   Idx = rand:uniform(length(FullList--[self()])),
                   ActorPid = lists:nth(Idx, FullList--[self()]),
+%%                  send msg to next node
                   ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2},
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   main_loop((Sum + S) / 2, (Weight + W) / 2, Round + 1)
               end;
 
             true ->
+%%              get neighbor index
               Idx = rand:uniform(length(FullList--[self()])),
               ActorPid = lists:nth(Idx, FullList--[self()]),
+              %%                  send msg to next node
               ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2},
+              {RealTime, _} = statistics(wall_clock),
+              io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
               main_loop((Sum + S) / 2, (Weight + W) / 2, 0)
           end
       end;
@@ -69,12 +82,18 @@ main_loop(Sum, Weight, Round) ->
               case length(Neighbors) of
                 0 ->
                   SupervisorPid ! {line_pushsum, FullList},
-                  io:format("Converged ~n");
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                  io:format("Converged ~n");
+
 
                 _ ->
+                  %%              get neighbor index
                   NeighborIdx = rand:uniform(length(Neighbors)),
                   {Idx, ActorPid} = lists:nth(NeighborIdx, Neighbors),
                   ActorPid ! {line, FullList, Idx, (Sum + S) / 2, (Weight + W) / 2, Index, SupervisorPid},
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   io:format("ActorPid is done ~p ~n ", [self()])
               end;
 
@@ -82,12 +101,17 @@ main_loop(Sum, Weight, Round) ->
               case length(Neighbors) of
                 0 ->
                   SupervisorPid ! {line_pushsum, FullList},
-                  io:format("No neighbors ~n");
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                  io:format("No neighbors ~n");
 %%                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+                %%              get neighbor index
                 _ -> NeighborIdx = rand:uniform(length(Neighbors)),
                   {Idx, ActorPid} = lists:nth(NeighborIdx, Neighbors),
                   ActorPid ! {line, FullList, Idx, (Sum + S) / 2, (Weight + W) / 2, Index, SupervisorPid},
 %%            io:format("ActorPid is done ~p ~n ",[self()]),
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   main_loop((Sum + S) / 2, (Weight + W) / 2, Round + 1)
               end
 
@@ -97,12 +121,18 @@ main_loop(Sum, Weight, Round) ->
           case length(Neighbors) of
             0 ->
               SupervisorPid ! {line_pushsum, FullList},
-              io:format("No neighbors ~n");
+              {RealTime, _} = statistics(wall_clock),
+              io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%              io:format("No neighbors ~n");
+
             _ ->
+              %%              get neighbor index
               NeighborIdx = rand:uniform(length(Neighbors)),
               {Idx, ActorPid} = lists:nth(NeighborIdx, Neighbors),
               ActorPid ! {line, FullList, Idx, (Sum + S) / 2, (Weight + W) / 2, Index, SupervisorPid},
 %%        io:format("ActorPid is done ~p ~n ",[self()]),
+              {RealTime, _} = statistics(wall_clock),
+              io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
               main_loop((Sum + S) / 2, (Weight + W) / 2, 0)
           end
       end;
@@ -120,9 +150,13 @@ main_loop(Sum, Weight, Round) ->
       Neighbors = getNeighbors_2d(Index1, Index2, SquareDim, List_2D),
       case length(Neighbors) of
         0 ->
-          io:format("My 2d Topology has converged .. :'( ~n");
+          {RealTime, _} = statistics(wall_clock),
+          io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%          io:format("My 2d Topology has converged ..  ~n");
 
         _ ->
+          {RealTime1, _} = statistics(wall_clock),
+          io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime1]),
           OldEstimate = Sum / Weight,
           NewEstimate = (Sum + S) / (Weight + W),
 
@@ -134,11 +168,17 @@ main_loop(Sum, Weight, Round) ->
                 Round =:= 2 ->
                   case length(Neighbors) of
                     0 ->
-                      io:format("No neighbors");
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                      io:format("No neighbors");
                     _ ->
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
+                      %%              get neighbor index
                       Idx = rand:uniform(length(Neighbors)),
                       {[NextIdx1, NextIdx2], ActorPid} = lists:nth(Idx, Neighbors),
-                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+%%                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+
                       io:format("ActorPid is done ~p ~n ", [self()]),
                       ActorPid ! {"2D", SquareDim, NextIdx1, NextIdx2, List_2D, (Sum + S) / 2, (Weight + W) / 2, Index1, Index2}
                   end;
@@ -146,12 +186,17 @@ main_loop(Sum, Weight, Round) ->
                 true ->
                   case length(Neighbors) of
                     0 ->
-                      io:format("No neighbors");
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                      io:format("No neighbors");
                     _ ->
+
                       Idx = rand:uniform(length(Neighbors)),
                       {[NextIdx1, NextIdx2], ActorPid} = lists:nth(Idx, Neighbors),
                       ActorPid ! {"2D", SquareDim, NextIdx1, NextIdx2, List_2D, (Sum + S) / 2, (Weight + W) / 2, Index1, Index2},
-                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+%%                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                       main_loop((Sum + S) / 2, (Weight + W) / 2, Round + 1)
                   end
               end;
@@ -159,12 +204,17 @@ main_loop(Sum, Weight, Round) ->
             true ->
               case length(Neighbors) of
                 0 ->
-                  io:format("No neighbors");
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                  io:format("No neighbors");
                 _ ->
+                  %%              get neighbor index
                   Idx = rand:uniform(length(Neighbors)),
                   {[NextIdx1, NextIdx2], ActorPid} = lists:nth(Idx, Neighbors),
                   ActorPid ! {"2D", SquareDim, NextIdx1, NextIdx2, List_2D, (Sum + S) / 2, (Weight + W) / 2, Index1, Index2},
-                  io:format("Round is ~p , sent msg to : ~p ~n", [0, ActorPid]),
+%%                  io:format("Round is ~p , sent msg to : ~p ~n", [0, ActorPid]),
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   main_loop((Sum + S) / 2, (Weight + W) / 2, 0)
               end
           end
@@ -181,6 +231,8 @@ main_loop(Sum, Weight, Round) ->
       Neighbors = getNeighbors_i3d(Index1, Index2, SquareDim, List_2D),
       case length(Neighbors) of
         0 ->
+          {RealTime, _} = statistics(wall_clock),
+          io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
           io:format("My 2d Topology has converged .. :'( ~n");
 
         _ ->
@@ -194,23 +246,31 @@ main_loop(Sum, Weight, Round) ->
               if
                 Round =:= 2 ->
                   case length(Neighbors) of
-                    0 -> io:format("No Neighbours");
+                    0 -> {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                      io:format("No Neighbours");
                     _ -> Idx = rand:uniform(length(Neighbors)),
                       {[NextIdx1, NextIdx2], ActorPid} = lists:nth(Idx, Neighbors),
-                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+%%                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
                       io:format("ActorPid is done ~p ~n ", [self()]),
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                       ActorPid ! {imp_3d, SquareDim, NextIdx1, NextIdx2, List_2D, (Sum + S) / 2, (Weight + W) / 2, Index1, Index2}
                   end;
 
                 true ->
                   case length(Neighbors) of
                     0 ->
-                      io:format("No Neighbours");
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                      io:format("No Neighbours");
                     _ ->
                       Idx = rand:uniform(length(Neighbors)),
                       {[NextIdx1, NextIdx2], ActorPid} = lists:nth(Idx, Neighbors),
                       ActorPid ! {imp_3d, SquareDim, NextIdx1, NextIdx2, List_2D, (Sum + S) / 2, (Weight + W) / 2, Index1, Index2},
-                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+%%                      io:format("Round is ~p , sent msg to : ~p ~n", [Round + 1, ActorPid]),
+                      {RealTime, _} = statistics(wall_clock),
+                      io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                       main_loop((Sum + S) / 2, (Weight + W) / 2, Round + 1)
                   end
               end;
@@ -218,12 +278,16 @@ main_loop(Sum, Weight, Round) ->
             true ->
               case length(Neighbors) of
                 0 ->
-                  io:format("No Neighbours");
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]);
+%%                  io:format("No Neighbours");
                 _ ->
                   Idx = rand:uniform(length(Neighbors)),
                   {[NextIdx1, NextIdx2], ActorPid} = lists:nth(Idx, Neighbors),
                   ActorPid ! {imp_3d, SquareDim, NextIdx1, NextIdx2, List_2D, (Sum + S) / 2, (Weight + W) / 2, Index1, Index2},
-                  io:format("Round is ~p , sent msg to : ~p ~n", [0, ActorPid]),
+%%                  io:format("Round is ~p , sent msg to : ~p ~n", [0, ActorPid]),
+                  {RealTime, _} = statistics(wall_clock),
+                  io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   main_loop((Sum + S) / 2, (Weight + W) / 2, 0)
               end
           end
