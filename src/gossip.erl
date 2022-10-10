@@ -93,7 +93,7 @@ main_loop(RumorCount) ->
       end;
 
     {fullNetwork,FullList,PrevActorPid} ->
-
+      io:format("Full list len : ~p ~n",[length(FullList)]),
       case PrevActorPid of
          false ->
            ok;

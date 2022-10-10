@@ -24,8 +24,8 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           lineConvergenceOfNodes();
 
         "PushSum" ->
-          ActorPid ! {line,LineList,0,0}
-          %%% lineConvergenceOfNodes()
+          ActorPid ! {line,LineList,Index,0,0,false,self()},
+          lineConvergenceOfNodes()
 
       end;
 
@@ -49,7 +49,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
 
         "PushSum" ->
 %%          pass
-          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D, 0, 0},
+          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D, 0, 0, false, false},
           pushsum_started
       end;
 
@@ -90,7 +90,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           gossip_started;
 
         "PushSum" ->
-          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D, 0, 0},
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D, 0, 0, false, false},
           pushsum_started
       end
   end.
@@ -157,6 +157,22 @@ lineConvergenceOfNodes() ->
             %%% send the communication
             ActorPid ! {line,length(UpdatedList),Index,UpdatedList,self()},
             lineConvergenceOfNodes()
+      end;
+
+    {line_pushsum,UpdatedList} ->
+       io:format("RECEIVE COMM ~n"),
+      %%% chk the list and find the Alive Actors --- count to start from 1
+
+      {Status,ActorPid,Index} = chkForAliveActors(length(UpdatedList),UpdatedList),
+
+      case Status of
+        fail ->
+          io:format("Entire nodes in topology have converged ~n");
+
+        ok ->
+          %%% send the communication
+          ActorPid ! {line, UpdatedList, Index, 0, 0, false, self()},
+          lineConvergenceOfNodes()
       end
   end.
 

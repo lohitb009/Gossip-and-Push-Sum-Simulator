@@ -47,50 +47,74 @@ main_loop(Sum,Weight,Round) ->
            end
       end;
 
-    {line,FullList,S,W} ->
-      io:format("Reached : ~p ~n",[self()]),
-      Index = string:str(FullList, [self()]),
-      case length(FullList) of
-        1 ->
-          io:format("My Line Topology has converged .. :'( ~n");
-
+    {line, FullList, Index, S, W, PrevIndex, SupervisorPid} ->
+      case PrevIndex of
+        false ->
+          ok;
         _ ->
-          OldEstimate = Sum/Weight,
-          NewEstimate = (Sum+S)/(Weight+W),
+          PrevActorPid = lists:nth(PrevIndex, FullList),
+          PrevActorPid ! {line, FullList, PrevIndex, 0, 0, false, SupervisorPid}
+      end,
+      io:format("Current Actor Pid is ~p ~n ",[self()]),
 
-          if
-            (OldEstimate-NewEstimate) < 0.0000000001 ->
-              %%% Chk for rounds
+      OldEstimate = Sum/Weight,
+      NewEstimate = (Sum+S)/(Weight+W),
+      Neighbors = getNeighbors_line(Index,length(FullList),FullList),
 
-              if
-                Round =:= 2->
-                  Neighbors = getNeighbors_line(Index,length(FullList),FullList),
-                  Idx = rand:uniform(length(Neighbors)),
-                  {_,ActorPid} = lists:nth(Idx,Neighbors),
-                  ActorPid ! {line,FullList--[self()],(Sum+S)/2,(Weight+W)/2},
-                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
-                  io:format("ActorPid is done ~p ~n ",[self()]);
+      if
+        (OldEstimate-NewEstimate) < 0.0000000001->
+          %%% Chk for round condition
+          case Round of
+            2 ->
+              case length(Neighbors) of
+                0 ->
+                  SupervisorPid ! {line_pushsum,FullList},
+                  io:format("Converged ~n");
 
-                true ->
-                  Neighbors = getNeighbors_line(Index,length(FullList),FullList),
-                  Idx = rand:uniform(length(Neighbors)),
-                  {_,ActorPid} = lists:nth(Idx,Neighbors),
-                  ActorPid ! {line,FullList,(Sum+S)/2,(Weight+W)/2},
-                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
-                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+                _ ->
+                  NeighborIdx = rand:uniform(length(Neighbors)),
+                  {Idx,ActorPid} = lists:nth(NeighborIdx,Neighbors),
+                  ActorPid ! {line, FullList, Idx, (Sum+S)/2,(Weight+W)/2, Index, SupervisorPid},
+                  io:format("ActorPid is done ~p ~n ",[self()])
               end;
 
-            true ->
-              Neighbors = getNeighbors_line(Index,length(FullList),FullList),
-              Idx = rand:uniform(length(Neighbors)),
-              {_,ActorPid} = lists:nth(Idx,Neighbors),
-              ActorPid ! {line,FullList,(Sum+S)/2,(Weight+W)/2},
-              io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
+            _ ->
+              case length(Neighbors) of
+                0 ->
+                  SupervisorPid ! {line_pushsum,FullList},
+                  io:format("No neighbors ~n");
+%%                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+                _ -> NeighborIdx = rand:uniform(length(Neighbors)),
+                  {Idx,ActorPid} = lists:nth(NeighborIdx,Neighbors),
+                  ActorPid ! {line, FullList, Idx, (Sum+S)/2,(Weight+W)/2, Index, SupervisorPid},
+%%            io:format("ActorPid is done ~p ~n ",[self()]),
+                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+              end
+
+          end;
+
+        true ->
+          case length(Neighbors) of
+             0 ->
+               SupervisorPid ! {line_pushsum,FullList},
+               io:format("No neighbors ~n");
+            _ ->
+              NeighborIdx = rand:uniform(length(Neighbors)),
+              {Idx,ActorPid} = lists:nth(NeighborIdx,Neighbors),
+              ActorPid ! {line, FullList, Idx, (Sum+S)/2,(Weight+W)/2, Index, SupervisorPid},
+%%        io:format("ActorPid is done ~p ~n ",[self()]),
               main_loop((Sum+S)/2, (Weight+W)/2, 0)
           end
       end;
 
-    {"2D",SquareDim,Index1, Index2 ,List_2D, S,W} ->
+
+    {"2D",SquareDim,Index1, Index2 ,List_2D, S,W, PreviousIndex1, PreviousIndex2} ->
+      case PreviousIndex1 of
+        false -> ok;
+        _ ->
+          PreviousActorPid = lists:nth(PreviousIndex2,lists:nth(PreviousIndex1,List_2D)),
+          PreviousActorPid ! {"2D", SquareDim, PreviousIndex1, PreviousIndex2 ,List_2D, 0, 0, false, false}
+      end,
 %%      io:format("Reached : ~p ~n",[self()]),
 %%      Index = string:str(FullList, [self()]),
       Neighbors = getNeighbors_2d(Index1, Index2, SquareDim,List_2D),
@@ -113,7 +137,7 @@ main_loop(Sum,Weight,Round) ->
                   {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors),
                   io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
                   io:format("ActorPid is done ~p ~n ",[self()]),
-                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2};
+                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2, Index1, Index2};
 %%                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]);
 
 
@@ -121,7 +145,7 @@ main_loop(Sum,Weight,Round) ->
                   Neighbors = getNeighbors_2d(Index1, Index2, SquareDim,List_2D),
                   Idx = rand:uniform(length(Neighbors)),
                   {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors),
-                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2},
+                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2, Index1, Index2},
                   io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
                   main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
               end;
@@ -130,17 +154,23 @@ main_loop(Sum,Weight,Round) ->
               Neighbors = getNeighbors_2d(Index1, Index2, SquareDim,List_2D),
               Idx = rand:uniform(length(Neighbors)),
               {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors),
-              ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2},
+              ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2, Index1, Index2},
               io:format("Round is ~p , sent msg to : ~p ~n",[0,ActorPid]),
               main_loop((Sum+S)/2, (Weight+W)/2, 0)
           end
       end;
 
-    {imp_3d,SquareDim,Index1, Index2 ,List_2D, S,W} ->
+    {imp_3d,SquareDim,Index1, Index2 ,List_2D, S,W, PreviousIndex1, PreviousIndex2} ->
+      case PreviousIndex1 of
+        false -> ok;
+        _ ->
+          PreviousActorPid = lists:nth(PreviousIndex2,lists:nth(PreviousIndex1,List_2D)),
+          PreviousActorPid ! {imp_3d, SquareDim, PreviousIndex1, PreviousIndex2 ,List_2D, 0, 0, false, false}
+      end,
 %%      io:format("Reached : ~p ~n",[self()]),
 %%      Index = string:str(FullList, [self()]),
-      Neighbors_init = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
-      case length(Neighbors_init) of
+      Neighbors = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+      case length(Neighbors) of
         0 ->
           io:format("My 2d Topology has converged .. :'( ~n");
 
@@ -154,35 +184,44 @@ main_loop(Sum,Weight,Round) ->
 
               if
                 Round =:= 2->
-                  Neighbors1 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
-                  Idx = rand:uniform(length(Neighbors1)),
-                  {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors1),
-                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
-                  io:format("ActorPid is done ~p ~n ",[self()]),
-                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2};
+%%                  Neighbors = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+                  case length(Neighbors) of
+                    0 -> io:format("No Neighbours");
+                    _ -> Idx = rand:uniform(length(Neighbors)),
+                      {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors),
+                      io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
+                      io:format("ActorPid is done ~p ~n ",[self()]),
+                      ActorPid ! {imp_3d,SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2, Index1, Index2}
+                  end;
+
 %%                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]);
-
-
                 true ->
-                  Neighbors2 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
-                  Idx = rand:uniform(length(Neighbors2)),
-                  {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors2),
-                  ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2},
-                  io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
-                  main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+                  case length(Neighbors) of
+                    0 -> io:format("No Neighbours");
+                    _ ->
+%%                      Neighbors2 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+                      Idx = rand:uniform(length(Neighbors)),
+                      {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors),
+                      ActorPid ! {imp_3d,SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2, Index1, Index2},
+                      io:format("Round is ~p , sent msg to : ~p ~n",[Round+1,ActorPid]),
+                      main_loop((Sum+S)/2, (Weight+W)/2, Round+1)
+                  end
               end;
+%%
 
             true ->
-              Neighbors4 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
-              Idx = rand:uniform(length(Neighbors4)),
-              {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors4),
-              ActorPid ! {"2D",SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2},
-              io:format("Round is ~p , sent msg to : ~p ~n",[0,ActorPid]),
-              main_loop((Sum+S)/2, (Weight+W)/2, 0)
+%%              Neighbors4 = getNeighbors_i3d(Index1, Index2, SquareDim,List_2D),
+              case length(Neighbors) of
+                0 -> io:format("No Neighbours");
+                _ -> Idx = rand:uniform(length(Neighbors)),
+                  {[NextIdx1, NextIdx2],ActorPid} = lists:nth(Idx,Neighbors),
+                  ActorPid ! {imp_3d,SquareDim,NextIdx1, NextIdx2 ,List_2D, (Sum+S)/2,(Weight+W)/2,Index1, Index2},
+                  io:format("Round is ~p , sent msg to : ~p ~n",[0,ActorPid]),
+                  main_loop((Sum+S)/2, (Weight+W)/2, 0)
+              end
+
           end
-      end
-
-
+  end
   end.
 
 
