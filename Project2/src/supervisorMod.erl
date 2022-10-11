@@ -24,11 +24,11 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {line,TotalNodes,Index,LineList,self()},
+          ActorPid ! {line,TotalNodes,Index,LineList,self(),false},
           lineConvergenceOfNodes();
 
         "PushSum" ->
-          ActorPid ! {line,LineList,Index,0,0,false,self()},
+          ActorPid ! {line,LineList,Index,0,0,false,self(),false},
           lineConvergenceOfNodes()
 
       end;
@@ -48,7 +48,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D},
+          ActorPid ! {"2D", SqareDim, Index1, Index2 ,List_2D, false, false},
           gossip_started;
 
         "PushSum" ->
@@ -90,7 +90,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
       case Algorithm of
 
         "Gossip"  ->
-          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D},
+          ActorPid ! {imp_3d, SqareDim, Index1, Index2 ,List_2D, false, false},
           gossip_started;
 
         "PushSum" ->
