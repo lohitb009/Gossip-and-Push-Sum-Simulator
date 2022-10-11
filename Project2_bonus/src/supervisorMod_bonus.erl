@@ -31,7 +31,7 @@ supervisorMod(TotalNodes, Topology, Algorithm, FailNodes) ->
       case Algorithm of
 
         "PushSum" ->
-          ActorPid ! {fullNetwork, UpdatedFullList, 0, 0}
+          ActorPid ! {fullNetwork, UpdatedFullList, 0, 0, false}
 
       end
   end.

@@ -13,7 +13,16 @@ startLink() ->
 main_loop(RumorCount) ->
   receive
 %%    in case of line topology
-    {line,TotalNodes,Index,LineList,SupervisorPid} ->
+    {line,TotalNodes,Index,LineList,SupervisorPid, PreviousIndex} ->
+      case PreviousIndex of
+        false ->
+          ok;
+
+        _ ->
+          PreviousActorPid = lists:nth(PreviousIndex, LineList),
+          PreviousActorPid ! {line, TotalNodes, PreviousIndex, LineList, SupervisorPid, false}
+      end,
+
       case RumorCount of
         10  ->
           io:format("Converged By Itself ~n"),
@@ -31,14 +40,14 @@ main_loop(RumorCount) ->
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
 %%              sending message to next node
-              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid};
+              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid, Index};
             2 ->
               NeighborIndex = rand:uniform(length(Neighbors)),
               {Idx,ActorPid} = lists:nth(NeighborIndex,Neighbors),
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
               %%              sending message to next node
-              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid}
+              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid, Index}
           end;
 
         _ ->
@@ -59,15 +68,23 @@ main_loop(RumorCount) ->
               %%% Get a random ActorPid
               NeighborIndex = rand:uniform(length(Neighbors)),
               {Idx,ActorPid} = lists:nth(NeighborIndex,Neighbors),
-              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid},
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
+              ActorPid ! {line,TotalNodes,Idx,LineList,SupervisorPid, Index},
               main_loop(RumorCount+1)
           end
       end;
 
 %%    2d topology
-    {"2D",SquareDim,Index1, Index2 ,List_2D} ->
+    {"2D",SquareDim,Index1, Index2 ,List_2D, PreviousIndex1, PreviousIndex2} ->
+      case PreviousIndex1 of
+        false ->
+          ok;
+        _ ->
+          PreviousActorPid = lists:nth(PreviousIndex2, lists:nth(PreviousIndex1, List_2D)),
+          PreviousActorPid ! {"2D", SquareDim, PreviousIndex1, PreviousIndex2, List_2D, false, false}
+      end,
+
       case RumorCount of
         10  ->
           io:format("Converged By Itself ~n"),
@@ -83,13 +100,13 @@ main_loop(RumorCount) ->
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
 %%              sending next message
-              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D};
+              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D, Index1, Index2};
             _ ->
               NeighborIndex = rand:uniform(length(Neighbors)),
               {[Idx1, Idx2],ActorPid} = lists:nth(NeighborIndex,Neighbors),
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
-              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D}
+              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D, Index1, Index2}
           end;
 
         _ ->
@@ -110,10 +127,10 @@ main_loop(RumorCount) ->
               NeighborIndex = rand:uniform(length(Neighbors)),
 
               {[Idx1, Idx2],ActorPid} = lists:nth(NeighborIndex,Neighbors),
-              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D},
-%%              io:format("Current PID : ~p New RumorCount : ~p ~n",[self(), RumorCount+1]),
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
+              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D, Index1, Index2},
+%%              io:format("Current PID : ~p New RumorCount : ~p ~n",[self(), RumorCount+1]),
               main_loop(RumorCount+1)
           end
       end;
@@ -122,11 +139,11 @@ main_loop(RumorCount) ->
       io:format("Full list len : ~p ~n",[length(FullList)]),
 %%      implementing acknowledge protocol as discussed in readme
       case PrevActorPid of
-         false ->
-           ok;
+        false ->
+          ok;
 
-         _ ->
-           PrevActorPid ! {fullNetwork,FullList,false}
+        _ ->
+          PrevActorPid ! {fullNetwork,FullList,false}
       end,
 
       case length(FullList) of
@@ -158,7 +175,18 @@ main_loop(RumorCount) ->
           end
       end;
 
-    {imp_3d, SquareDim,Index1, Index2 ,List_2D} ->
+    {imp_3d, SquareDim, Index1, Index2, List_2D, PrevIndex1, PrevIndex2} ->
+
+      case PrevIndex1 of
+
+        false ->
+          ok;
+
+        _ ->
+          PrevActorPid = lists:nth(PrevIndex2, lists:nth(PrevIndex1, List_2D)),
+          PrevActorPid ! {imp_3d, SquareDim, PrevIndex1, PrevIndex2, List_2D, false, false}
+      end,
+
       case RumorCount of
         10  ->
 %%          io:format("Current PID : ~p RumorCount : ~p ~n",[self(), RumorCount]),
@@ -173,13 +201,13 @@ main_loop(RumorCount) ->
               {[Idx1, Idx2],ActorPid} = lists:nth(1,Neighbors),
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
-              ActorPid ! {imp_3d, SquareDim, Idx1, Idx2 ,List_2D};
+              ActorPid ! {imp_3d, SquareDim, Idx1, Idx2 ,List_2D, Index1, Index2};
             _ ->
               NeighborIndex = rand:uniform(length(Neighbors)),
               {[Idx1, Idx2],ActorPid} = lists:nth(NeighborIndex,Neighbors),
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
-              ActorPid ! {imp_3d, SquareDim, Idx1, Idx2 ,List_2D}
+              ActorPid ! {imp_3d, SquareDim, Idx1, Idx2 ,List_2D, Index1, Index2}
           end;
 
         _ ->
@@ -201,10 +229,10 @@ main_loop(RumorCount) ->
               NeighborIndex = rand:uniform(length(Neighbors)),
 
               {[Idx1, Idx2],ActorPid} = lists:nth(NeighborIndex,Neighbors),
-              ActorPid ! {"2D", SquareDim, Idx1, Idx2 ,List_2D},
-%%              io:format("Current PID : ~p New RumorCount : ~p ~n",[self(), RumorCount+1]),
               {RealTime, _} = statistics(wall_clock),
+%%              io:format("Current PID : ~p New RumorCount : ~p ~n",[self(), RumorCount+1]),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
+              ActorPid ! {imp_3d, SquareDim, Idx1, Idx2 ,List_2D, Index1, Index2},
               main_loop(RumorCount+1)
           end
       end
@@ -241,7 +269,7 @@ forLoop(CurrIndex,Itr,DirMatrix,NeighborsList,LineList,TotalNodes) ->
 
 %%% get the Neighbors for 2D Topology
 getNeighbors_2d(Index1, Index2, SquareDim,List_2D) ->
-  NeighborsList = forLoop_2d(Index1, Index2,1,[[-1,0],[1,0],[0,1],[0,-1]],[],List_2D,SquareDim),
+  NeighborsList = forLoop_2d(Index1, Index2,1,[[-1,0],[1,0],[0,1],[0,-1], [-1, 1], [-1, -1], [1, 1], [1, -1]],[],List_2D,SquareDim),
   NeighborsList.
 
 forLoop_2d(Index1, Index2, Itr,DirMatrix,NeighborsList,List_2D,SquareDim) ->

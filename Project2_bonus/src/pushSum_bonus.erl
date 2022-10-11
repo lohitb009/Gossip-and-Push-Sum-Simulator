@@ -15,9 +15,17 @@ main_loop(Sum, Weight, Round) ->
     {exit,_} ->
       erlang:exit(self(),normal);
 
-    {fullNetwork, FullList, S, W} ->
+    {fullNetwork, FullList, S, W, PrevActorPid} ->
 %%      {RealTime1, _} = statistics(wall_clock),
 %%      io:format("Current Real Time: ~p milliseconds ~n",[RealTime1]),
+
+      case PrevActorPid of
+        false ->
+          ok;
+
+        _ ->
+          PrevActorPid ! {fullNetwork, FullList, S, W, false}
+      end,
 
       case length(FullList) of
         1 ->
@@ -38,7 +46,7 @@ main_loop(Sum, Weight, Round) ->
 
                   Idx = rand:uniform(length(FullList--[self()])),
                   ActorPid = lists:nth(Idx, FullList--[self()]),
-                  ActorPid ! {fullNetwork, FullList--[self()], (Sum + S) / 2, (Weight + W) / 2},
+                  ActorPid ! {fullNetwork, FullList--[self()], (Sum + S) / 2, (Weight + W) / 2, self()},
                   io:format("ActorPid is done ~p ~n ", [self()]);
 
                 true ->
@@ -47,7 +55,7 @@ main_loop(Sum, Weight, Round) ->
 
                   Idx = rand:uniform(length(FullList--[self()])),
                   ActorPid = lists:nth(Idx, FullList--[self()]),
-                  ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2},
+                  ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2, self()},
                   main_loop((Sum + S) / 2, (Weight + W) / 2, Round + 1)
               end;
 
@@ -57,7 +65,7 @@ main_loop(Sum, Weight, Round) ->
 
               Idx = rand:uniform(length(FullList--[self()])),
               ActorPid = lists:nth(Idx, FullList--[self()]),
-              ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2},
+              ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2, self()},
               main_loop((Sum + S) / 2, (Weight + W) / 2, 0)
           end
       end

@@ -72,7 +72,7 @@ supervisorMod(TotalNodes,Topology,Algorithm) ->
           ActorPid ! {fullNetwork,FullList,false};
 
         "PushSum" ->
-          ActorPid ! {fullNetwork,FullList,0,0}
+          ActorPid ! {fullNetwork,FullList,0,0,false}
       end;
 
     "Imperfect3D" ->

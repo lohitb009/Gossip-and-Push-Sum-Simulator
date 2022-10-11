@@ -12,7 +12,16 @@ startLink(Sum) ->
 
 main_loop(Sum, Weight, Round) ->
   receive
-    {fullNetwork, FullList, S, W} ->
+    {fullNetwork, FullList, S, W, PrevActorPid} ->
+
+      case PrevActorPid of
+        false ->
+          ok;
+
+        _ ->
+          PrevActorPid ! {fullNetwork, FullList, S, W, false}
+      end,
+
       case length(FullList) of
         1 ->
           {RealTime, _} = statistics(wall_clock),
@@ -32,7 +41,7 @@ main_loop(Sum, Weight, Round) ->
                 Round =:= 2 ->
                   Idx = rand:uniform(length(FullList--[self()])),
                   ActorPid = lists:nth(Idx, FullList--[self()]),
-                  ActorPid ! {fullNetwork, FullList--[self()], (Sum + S) / 2, (Weight + W) / 2},
+                  ActorPid ! {fullNetwork, FullList--[self()], (Sum + S) / 2, (Weight + W) / 2, self()},
                   {RealTime, _} = statistics(wall_clock),
                   io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   io:format("ActorPid is done ~p ~n ", [self()]);
@@ -42,7 +51,7 @@ main_loop(Sum, Weight, Round) ->
                   Idx = rand:uniform(length(FullList--[self()])),
                   ActorPid = lists:nth(Idx, FullList--[self()]),
 %%                  send msg to next node
-                  ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2},
+                  ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2, self()},
                   {RealTime, _} = statistics(wall_clock),
                   io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
                   main_loop((Sum + S) / 2, (Weight + W) / 2, Round + 1)
@@ -53,9 +62,9 @@ main_loop(Sum, Weight, Round) ->
               Idx = rand:uniform(length(FullList--[self()])),
               ActorPid = lists:nth(Idx, FullList--[self()]),
               %%                  send msg to next node
-              ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2},
               {RealTime, _} = statistics(wall_clock),
               io:format("Total Real Time at Event: ~p milliseconds ~n",[RealTime]),
+              ActorPid ! {fullNetwork, FullList, (Sum + S) / 2, (Weight + W) / 2, self()},
               main_loop((Sum + S) / 2, (Weight + W) / 2, 0)
           end
       end;
